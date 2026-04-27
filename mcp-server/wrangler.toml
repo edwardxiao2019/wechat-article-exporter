@@ -1,0 +1,7 @@
+name = "wechat-article-mcp"
+main = "src/index.ts"
+compatibility_date = "2026-01-28"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+EXPORTER_BASE_URL = "https://master.wechat-article-exporter-amq.pages.dev"
