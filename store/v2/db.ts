@@ -11,6 +11,7 @@ import type { ResourceAsset } from './resource';
 import type { ResourceMapAsset } from './resource-map';
 
 const db = new Dexie('exporter.wxdown.online') as Dexie & {
+  api: Table<Record<string, unknown>, number>;
   article: Table<ArticleAsset, string>;
   asset: EntityTable<Asset, 'url'>;
   comment: EntityTable<CommentAsset, 'url'>;

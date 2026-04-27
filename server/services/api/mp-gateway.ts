@@ -79,7 +79,7 @@ export async function proxyMpRequest(options: RequestOptions) {
       const upstreamSetCookies = extractSetCookieValues(mpResponse.headers);
       const nativeCount = mpResponse.headers.getSetCookie?.().length ?? -1;
       console.info(
-        `[login] wx.status=${mpResponse.status} native=${nativeCount} extracted=${upstreamSetCookies.length} runtime=${process.env.NITRO_PRESET || 'node-server'}`,
+        `[login] wx.status=${mpResponse.status} native=${nativeCount} extracted=${upstreamSetCookies.length} runtime=${process.env.NITRO_PRESET || 'node-server'}`
       );
       if (upstreamSetCookies.length === 0) {
         throw new Error(

@@ -1,6 +1,4 @@
 import { H3Event, parseCookies } from 'h3';
-import { extractSetCookieValues } from '../../utils/set-cookie';
-
 import {
   deleteApiToken,
   deleteApiTokenByAuthKey,
@@ -10,6 +8,7 @@ import {
   setApiTokenByAuthKey,
 } from '../../kv/api-token';
 import { deleteMpCookie, getMpCookie, setMpCookie } from '../../kv/cookie';
+import { extractSetCookieValues } from '../../utils/set-cookie';
 import {
   AccountSession,
   AUTH_KEY_TTL_MS,

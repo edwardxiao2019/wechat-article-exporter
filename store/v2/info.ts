@@ -1,3 +1,5 @@
+import type { D1CacheWriteOptions } from '~/shared/utils/d1-cache';
+import { writeEntryToD1 } from './d1';
 import { db } from './db';
 
 export interface MpAccount {
@@ -24,21 +26,23 @@ export interface MpAccount {
  * 更新 account 缓存
  * @param mpAccount
  */
-export async function updateInfoCache(mpAccount: MpAccount): Promise<boolean> {
-  return db.transaction('rw', 'info', async () => {
-    let infoCache = await db.info.get(mpAccount.fakeid);
-    if (infoCache) {
+export async function updateInfoCache(mpAccount: MpAccount, options?: D1CacheWriteOptions): Promise<boolean> {
+  let persistedInfo: MpAccount | undefined;
+
+  const result = await db.transaction('rw', 'info', async () => {
+    let currentInfo = await db.info.get(mpAccount.fakeid);
+    if (currentInfo) {
       if (mpAccount.completed) {
-        infoCache.completed = mpAccount.completed;
+        currentInfo.completed = mpAccount.completed;
       }
-      infoCache.count += mpAccount.count;
-      infoCache.articles += mpAccount.articles;
-      infoCache.nickname = mpAccount.nickname;
-      infoCache.round_head_img = mpAccount.round_head_img;
-      infoCache.total_count = mpAccount.total_count;
-      infoCache.update_time = Math.round(Date.now() / 1000);
+      currentInfo.count += mpAccount.count;
+      currentInfo.articles += mpAccount.articles;
+      currentInfo.nickname = mpAccount.nickname;
+      currentInfo.round_head_img = mpAccount.round_head_img;
+      currentInfo.total_count = mpAccount.total_count;
+      currentInfo.update_time = Math.round(Date.now() / 1000);
     } else {
-      infoCache = {
+      currentInfo = {
         fakeid: mpAccount.fakeid,
         completed: mpAccount.completed,
         count: mpAccount.count,
@@ -50,20 +54,52 @@ export async function updateInfoCache(mpAccount: MpAccount): Promise<boolean> {
         update_time: Math.round(Date.now() / 1000),
       };
     }
-    db.info.put(infoCache);
+
+    await db.info.put(currentInfo);
+    persistedInfo = currentInfo;
     return true;
   });
+
+  if (persistedInfo) {
+    await writeEntryToD1(
+      {
+        table: 'info',
+        key: persistedInfo.fakeid,
+        record: persistedInfo as unknown as Record<string, unknown>,
+      },
+      options
+    );
+  }
+
+  return result;
 }
 
-export async function updateLastUpdateTime(fakeid: string): Promise<boolean> {
-  return db.transaction('rw', 'info', async () => {
-    let infoCache = await db.info.get(fakeid);
-    if (infoCache) {
-      infoCache.last_update_time = Math.round(Date.now() / 1000);
-      db.info.put(infoCache);
+export async function updateLastUpdateTime(fakeid: string, options?: D1CacheWriteOptions): Promise<boolean> {
+  let persistedInfo: MpAccount | undefined;
+
+  const result = await db.transaction('rw', 'info', async () => {
+    let currentInfo = await db.info.get(fakeid);
+    if (currentInfo) {
+      currentInfo.last_update_time = Math.round(Date.now() / 1000);
+      await db.info.put(currentInfo);
     }
+
+    persistedInfo = currentInfo;
     return true;
   });
+
+  if (persistedInfo) {
+    await writeEntryToD1(
+      {
+        table: 'info',
+        key: persistedInfo.fakeid,
+        record: persistedInfo as unknown as Record<string, unknown>,
+      },
+      options
+    );
+  }
+
+  return result;
 }
 
 /**
@@ -89,7 +125,7 @@ export async function getAccountNameByFakeid(fakeid: string): Promise<string | n
 }
 
 // 批量导入公众号
-export async function importMpAccounts(mpAccounts: MpAccount[]): Promise<void> {
+export async function importMpAccounts(mpAccounts: MpAccount[], options?: D1CacheWriteOptions): Promise<void> {
   for (const mpAccount of mpAccounts) {
     // 导入时需要把相关数量置空
     mpAccount.completed = false;
@@ -99,6 +135,6 @@ export async function importMpAccounts(mpAccounts: MpAccount[]): Promise<void> {
     mpAccount.create_time = undefined;
     mpAccount.update_time = undefined;
     mpAccount.last_update_time = undefined;
-    await updateInfoCache(mpAccount);
+    await updateInfoCache(mpAccount, options);
   }
 }

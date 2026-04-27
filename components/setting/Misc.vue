@@ -52,6 +52,24 @@
             <UIcon color="gray" name="i-heroicons:question-mark-circle-16-solid" class="size-5" />
           </UPopover>
         </div>
+
+        <div class="flex gap-1">
+          <UCheckbox
+            v-model="preferences.d1MirrorEnabled"
+            name="d1MirrorEnabled"
+            label="同步缓存到 Cloudflare D1（云端镜像）"
+          />
+          <UPopover mode="hover" :popper="{ placement: 'top' }">
+            <template #panel>
+              <p class="max-w-[300px] p-3 text-sm text-gray-500">
+                勾选后，文章/评论/资源等缓存除了写入本地 IndexedDB，还会异步镜像到 Cloudflare D1。<br />
+                需要部署到 Cloudflare Pages 并在后台配置 NUXT_D1_CACHE_ENABLED=true 才会真正生效。<br />
+                关闭时不影响已有镜像数据，但新写入将不再同步。
+              </p>
+            </template>
+            <UIcon color="gray" name="i-heroicons:question-mark-circle-16-solid" class="size-5" />
+          </UPopover>
+        </div>
       </div>
       <div class="flex-1">
         <div>

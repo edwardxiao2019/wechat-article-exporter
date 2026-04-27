@@ -1,3 +1,5 @@
+import type { D1CacheWriteOptions } from '~/shared/utils/d1-cache';
+import { writeEntryToD1 } from './d1';
 import { db } from './db';
 
 export interface DebugAsset {
@@ -12,11 +14,22 @@ export interface DebugAsset {
  * 更新 html 缓存
  * @param html 缓存
  */
-export async function updateDebugCache(html: DebugAsset): Promise<boolean> {
-  return db.transaction('rw', 'debug', async () => {
+export async function updateDebugCache(html: DebugAsset, options?: D1CacheWriteOptions): Promise<boolean> {
+  const result = await db.transaction('rw', 'debug', async () => {
     await db.debug.put(html);
     return true;
   });
+
+  await writeEntryToD1(
+    {
+      table: 'debug',
+      key: html.url,
+      record: html as unknown as Record<string, unknown>,
+    },
+    options
+  );
+
+  return result;
 }
 
 /**

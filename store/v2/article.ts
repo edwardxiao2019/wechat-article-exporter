@@ -1,4 +1,6 @@
+import type { D1CacheWriteOptions } from '~/shared/utils/d1-cache';
 import type { AppMsgExWithFakeID, PublishInfo, PublishPage } from '~/types/types';
+import { writeEntriesToD1 } from './d1';
 import { db } from './db';
 import { type MpAccount, updateInfoCache } from './info';
 
@@ -9,7 +11,9 @@ export type ArticleAsset = AppMsgExWithFakeID;
  * @param account
  * @param publish_page
  */
-export async function updateArticleCache(account: MpAccount, publish_page: PublishPage) {
+export async function updateArticleCache(account: MpAccount, publish_page: PublishPage, options?: D1CacheWriteOptions) {
+  const mirroredArticles: ArticleAsset[] = [];
+
   await db.transaction('rw', ['article', 'info'], async () => {
     const keys = await db.article.toCollection().keys();
 
@@ -26,7 +30,9 @@ export async function updateArticleCache(account: MpAccount, publish_page: Publi
       let newEntryCount = 0;
 
       for (const article of publish_info.appmsgex) {
-        const key = await db.article.put({ ...article, fakeid, _status: '' }, `${fakeid}:${article.aid}`);
+        const cachedArticle = { ...article, fakeid, _status: '' };
+        const key = await db.article.put(cachedArticle, `${fakeid}:${article.aid}`);
+        mirroredArticles.push(cachedArticle);
         if (!keys.includes(key)) {
           newEntryCount++;
           articleCount++;
@@ -49,6 +55,29 @@ export async function updateArticleCache(account: MpAccount, publish_page: Publi
       total_count: total_count,
     });
   });
+
+  await writeEntriesToD1(
+    mirroredArticles.map(article => ({
+      table: 'article',
+      key: `${article.fakeid}:${article.aid}`,
+      record: article as unknown as Record<string, unknown>,
+    })),
+    options
+  );
+
+  const infoCache = await db.info.get(account.fakeid);
+  if (infoCache) {
+    await writeEntriesToD1(
+      [
+        {
+          table: 'info',
+          key: infoCache.fakeid,
+          record: infoCache as unknown as Record<string, unknown>,
+        },
+      ],
+      options
+    );
+  }
 }
 
 /**
@@ -110,7 +139,7 @@ export async function getSingleArticleByLink(url: string): Promise<AppMsgExWithF
  * @param url
  * @param is_deleted
  */
-export async function articleDeleted(url: string, is_deleted = true): Promise<void> {
+export async function articleDeleted(url: string, is_deleted = true, options?: D1CacheWriteOptions): Promise<void> {
   await db.transaction('rw', 'article', async () => {
     await db.article
       .where('link')
@@ -119,6 +148,16 @@ export async function articleDeleted(url: string, is_deleted = true): Promise<vo
         article.is_deleted = is_deleted;
       });
   });
+
+  const updatedArticles = await db.article.where('link').equals(url).toArray();
+  await writeEntriesToD1(
+    updatedArticles.map(article => ({
+      table: 'article',
+      key: `${article.fakeid}:${article.aid}`,
+      record: article as unknown as Record<string, unknown>,
+    })),
+    options
+  );
 }
 
 /**
@@ -126,7 +165,7 @@ export async function articleDeleted(url: string, is_deleted = true): Promise<vo
  * @param url
  * @param status
  */
-export async function updateArticleStatus(url: string, status: string): Promise<void> {
+export async function updateArticleStatus(url: string, status: string, options?: D1CacheWriteOptions): Promise<void> {
   await db.transaction('rw', 'article', async () => {
     await db.article
       .where('link')
@@ -135,6 +174,16 @@ export async function updateArticleStatus(url: string, status: string): Promise<
         article._status = status;
       });
   });
+
+  const updatedArticles = await db.article.where('link').equals(url).toArray();
+  await writeEntriesToD1(
+    updatedArticles.map(article => ({
+      table: 'article',
+      key: `${article.fakeid}:${article.aid}`,
+      record: article as unknown as Record<string, unknown>,
+    })),
+    options
+  );
 }
 
 /**
@@ -142,7 +191,7 @@ export async function updateArticleStatus(url: string, status: string): Promise<
  * @param url
  * @param fakeid
  */
-export async function updateArticleFakeid(url: string, fakeid: string): Promise<void> {
+export async function updateArticleFakeid(url: string, fakeid: string, options?: D1CacheWriteOptions): Promise<void> {
   await db.transaction('rw', 'article', async () => {
     await db.article
       .where('link')
@@ -155,4 +204,14 @@ export async function updateArticleFakeid(url: string, fakeid: string): Promise<
         article._single = true;
       });
   });
+
+  const updatedArticles = await db.article.where('link').equals(url).toArray();
+  await writeEntriesToD1(
+    updatedArticles.map(article => ({
+      table: 'article',
+      key: `${article.fakeid}:${article.aid}`,
+      record: article as unknown as Record<string, unknown>,
+    })),
+    options
+  );
 }

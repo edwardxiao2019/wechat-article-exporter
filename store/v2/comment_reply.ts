@@ -1,3 +1,5 @@
+import type { D1CacheWriteOptions } from '~/shared/utils/d1-cache';
+import { writeEntryToD1 } from './d1';
 import { db } from './db';
 
 export interface CommentReplyAsset {
@@ -12,11 +14,26 @@ export interface CommentReplyAsset {
  * 更新 comment 缓存
  * @param reply 缓存
  */
-export async function updateCommentReplyCache(reply: CommentReplyAsset): Promise<boolean> {
-  return db.transaction('rw', 'comment_reply', async () => {
+export async function updateCommentReplyCache(
+  reply: CommentReplyAsset,
+  options?: D1CacheWriteOptions
+): Promise<boolean> {
+  const key = `${reply.url}:${reply.contentID}`;
+  const result = await db.transaction('rw', 'comment_reply', async () => {
     await db.comment_reply.put(reply, `${reply.url}:${reply.contentID}`);
     return true;
   });
+
+  await writeEntryToD1(
+    {
+      table: 'comment_reply',
+      key,
+      record: reply as unknown as Record<string, unknown>,
+    },
+    options
+  );
+
+  return result;
 }
 
 /**

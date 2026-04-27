@@ -7,6 +7,11 @@ export default defineNuxtConfig({
   modules: ['@vueuse/nuxt', '@nuxt/ui', 'nuxt-monaco-editor', '@sentry/nuxt/module', 'nuxt-umami'],
   ssr: false,
   runtimeConfig: {
+    d1Cache: {
+      enabled: process.env.NUXT_D1_CACHE_ENABLED === 'true',
+      binding: process.env.NITRO_D1_BINDING || 'DB',
+      table: process.env.NITRO_D1_TABLE || 'cache_entries',
+    },
     public: {
       aggridLicense: process.env.NUXT_AGGRID_LICENSE,
       sentry: {

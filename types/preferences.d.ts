@@ -20,6 +20,9 @@ export interface Preferences {
 
   syncDateRange: '24h' | '1d' | '3d' | '7d' | '1m' | '3m' | '6m' | '1y' | 'all' | 'point';
   syncDatePoint: number;
+
+  // 是否将缓存镜像到 Cloudflare D1（仅在 NUXT_D1_CACHE_ENABLED=true 时生效）
+  d1MirrorEnabled: boolean;
 }
 
 interface ExportConfig {
