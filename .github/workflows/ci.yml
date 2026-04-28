@@ -20,7 +20,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Format check
-        run: yarn format --check
+        run: npx biome check
 
       - name: Run unit tests
         run: yarn test:api-core

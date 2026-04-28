@@ -28,9 +28,7 @@ export async function logResponse(requestId: string, response: Response) {
   console.log(
     `[响应 ${requestId} ${timestamp}]\n` +
       `HTTP/1.1 ${response.status} ${response.statusText}\n` +
-      `${Array.from(response.headers.entries())
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('\n')}\n\n` +
+      `${[...response.headers.entries()].map(([k, v]) => `${k}: ${v}`).join('\n')}\n\n` +
       `${responseBody || '<nil>'}`
   );
 }
