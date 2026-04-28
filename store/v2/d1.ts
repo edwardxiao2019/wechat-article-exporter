@@ -197,6 +197,7 @@ export async function fetchEntryFromD1<T>(table: D1CacheTable, key: string): Pro
 
     return record as T;
   } catch (error) {
+    if (disableD1OnUnauth(error)) return undefined;
     console.warn('[store/v2] D1 fallback read failed', error);
     return undefined;
   }

@@ -13,10 +13,11 @@ interface Env {
 const TOOLS = [
   {
     name: 'download_article',
-    description: '下载微信公众号文章内容，返回指定格式（markdown / text / html / json）',
+    description: '下载微信公众号文章内容，返回指定格式（markdown / text / html / json）。需要 auth_key。',
     inputSchema: {
       type: 'object',
       properties: {
+        auth_key: { type: 'string', description: '鉴权令牌，登录后从 exporter 设置页面复制' },
         url: { type: 'string', description: '微信文章链接，格式：https://mp.weixin.qq.com/s/...' },
         format: {
           type: 'string',
@@ -25,7 +26,7 @@ const TOOLS = [
           description: '输出格式，默认 markdown',
         },
       },
-      required: ['url'],
+      required: ['auth_key', 'url'],
     },
   },
   {
@@ -94,7 +95,7 @@ const TOOLS = [
   {
     name: 'get_auth_key',
     description:
-      '获取当前服务器会话对应的 auth_key（API 令牌），供 search_accounts / list_articles 等需要鉴权的工具使用。需要服务器端已配置有效的微信登录会话。',
+      '尝试从服务器会话获取 auth_key（API 令牌）。仅当 exporter 服务端已有有效登录会话（cookie）时才能成功。若失败，请直接从 exporter 设置页面复制 auth_key 手动提供给其他工具。',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -143,7 +144,11 @@ async function executeTool(name: string, args: Record<string, unknown>, base: st
 
   switch (name) {
     case 'download_article':
-      return get('/api/public/v1/download', { url: args.url, format: args.format ?? 'markdown' });
+      return get(
+        '/api/public/v1/download',
+        { url: args.url, format: args.format ?? 'markdown' },
+        { 'X-Auth-Key': String(args.auth_key) }
+      );
 
     case 'get_account_by_url':
       return get('/api/public/v1/accountbyurl', { url: args.url });

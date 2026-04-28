@@ -37,22 +37,22 @@ wrangler deploy
 
 | 工具 | 说明 |
 |---|---|
-| `download_article` | 下载文章内容，支持 markdown / text / html / json 格式 |
 | `get_account_by_url` | 从文章链接提取公众号信息（含 fakeid） |
 | `get_account_details` | 获取公众号详情（需服务端配置 `NUXT_WECHAT_ABOUT_BIZ_*` 环境变量） |
 | `get_author_info` | 获取公众号主体元数据 |
-| `get_auth_key` | 获取服务器会话对应的 auth_key，供鉴权工具使用 |
 | `get_account_name` | 从文章链接快速获取公众号名称 |
+| `get_auth_key` | 尝试从服务端会话获取 auth_key。**仅当 exporter 服务端已有登录会话时有效**；无效时请从 exporter「设置 → 关于」页面手动复制 |
+| `list_album` | 获取公众号合集文章列表。**需要 exporter 服务端有有效的微信登录会话**（不需要 auth_key） |
 
 ### 需要 auth_key
 
-> 先用 `get_auth_key` 工具获取令牌，或在 wechat-article-exporter 后台「设置 → 关于」页面复制。
+> 推荐做法：在 wechat-article-exporter 后台「设置 → 关于」页面复制 auth_key，粘贴到工具参数中。`get_auth_key` 工具仅在服务端已有 cookie 会话时有效。
 
 | 工具 | 说明 |
 |---|---|
+| `download_article` | 下载文章内容，支持 markdown / text / html / json 格式 |
 | `search_accounts` | 按关键词搜索公众号 |
 | `list_articles` | 获取指定公众号的文章列表（支持关键词过滤与分页） |
-| `list_album` | 获取公众号合集（专辑）的文章列表 |
 
 ### 工具参数速查
 
@@ -61,6 +61,7 @@ wrangler deploy
 
 | 参数 | 类型 | 必填 | 说明 |
 |---|---|---|---|
+| `auth_key` | string | 是 | 鉴权令牌 |
 | `url` | string | 是 | 微信文章链接 `https://mp.weixin.qq.com/s/...` |
 | `format` | string | 否 | `markdown`（默认）/ `text` / `html` / `json` |
 </details>

@@ -1,10 +1,10 @@
 import type { H3Event } from 'h3';
+import { getTokenFromEvent } from '~/server/services/api/auth-session';
 import {
   D1_CACHE_TABLES,
   type D1CacheDeleteRequestEntry,
   type D1CacheWriteRequestEntry,
 } from '~/shared/utils/d1-cache';
-import { getTokenFromEvent } from '~/server/services/api/auth-session';
 
 interface D1StatementLike {
   bind(...values: unknown[]): {
