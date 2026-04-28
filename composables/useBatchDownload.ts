@@ -1,6 +1,5 @@
 import { format } from 'date-fns';
 import { saveAs } from 'file-saver';
-import JSZip from 'jszip';
 import type { DownloadableArticle } from '~/types/types';
 import { downloadArticleHTMLs, packHTMLAssets } from '~/utils';
 
@@ -23,6 +22,7 @@ export function useDownloadAlbum() {
       });
 
       phase.value = '打包';
+      const { default: JSZip } = await import('jszip');
       const zip = new JSZip();
       for (const article of results) {
         await packHTMLAssets(

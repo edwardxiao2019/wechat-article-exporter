@@ -52,6 +52,24 @@ export function resolveD1Toggle(options?: D1CacheWriteOptions): boolean {
   }
 }
 
+// --- 401 auto-disable ---
+
+function disableD1OnUnauth(error: unknown): boolean {
+  const status = (error as any)?.response?.status ?? (error as any)?.status;
+  if (status !== 401) return false;
+  try {
+    const raw = localStorage.getItem('preferences');
+    if (raw) {
+      const prefs = JSON.parse(raw);
+      prefs.d1MirrorEnabled = false;
+      localStorage.setItem('preferences', JSON.stringify(prefs));
+      window.dispatchEvent(new StorageEvent('storage', { key: 'preferences', newValue: JSON.stringify(prefs) }));
+    }
+  } catch {}
+  window.dispatchEvent(new CustomEvent('d1-auth-error'));
+  return true;
+}
+
 // --- negative cache (avoids hammering D1 on repeated misses) ---
 
 const negativeCacheMap = new Map<string, number>(); // key -> expiry ms
@@ -124,6 +142,7 @@ export async function writeEntriesToD1(entries: D1CacheEntry[], options?: D1Cach
       body,
     });
   } catch (error) {
+    if (disableD1OnUnauth(error)) return;
     console.warn('[store/v2] failed to mirror cache writes to D1', error);
   }
 }
@@ -142,6 +161,7 @@ export async function deleteEntriesFromD1(
   try {
     await $fetch('/api/web/cache/d1', { method: 'POST', body: { action: 'delete', entries } });
   } catch (error) {
+    if (disableD1OnUnauth(error)) return;
     console.warn('[store/v2] failed to mirror cache deletes to D1', error);
   }
 }

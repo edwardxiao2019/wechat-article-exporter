@@ -18,7 +18,12 @@ const TOOLS = [
       type: 'object',
       properties: {
         url: { type: 'string', description: '微信文章链接，格式：https://mp.weixin.qq.com/s/...' },
-        format: { type: 'string', enum: ['markdown', 'text', 'html', 'json'], default: 'markdown', description: '输出格式，默认 markdown' },
+        format: {
+          type: 'string',
+          enum: ['markdown', 'text', 'html', 'json'],
+          default: 'markdown',
+          description: '输出格式，默认 markdown',
+        },
       },
       required: ['url'],
     },
@@ -36,7 +41,8 @@ const TOOLS = [
   },
   {
     name: 'get_account_details',
-    description: '获取公众号详细资料：简介、微信号、认证信息、历史名称、IP 归属地等。注意：需要服务端配置 NUXT_WECHAT_ABOUT_BIZ_WX_HEADER / NUXT_WECHAT_ABOUT_BIZ_UIN / NUXT_WECHAT_ABOUT_BIZ_KEY 等环境变量，否则返回"密钥已过期"。',
+    description:
+      '获取公众号详细资料：简介、微信号、认证信息、历史名称、IP 归属地等。注意：需要服务端配置 NUXT_WECHAT_ABOUT_BIZ_WX_HEADER / NUXT_WECHAT_ABOUT_BIZ_UIN / NUXT_WECHAT_ABOUT_BIZ_KEY 等环境变量，否则返回"密钥已过期"。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -85,6 +91,41 @@ const TOOLS = [
       required: ['auth_key', 'fakeid'],
     },
   },
+  {
+    name: 'get_auth_key',
+    description:
+      '获取当前服务器会话对应的 auth_key（API 令牌），供 search_accounts / list_articles 等需要鉴权的工具使用。需要服务器端已配置有效的微信登录会话。',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
+    name: 'list_album',
+    description: '获取公众号指定合集（专辑）的文章列表，支持分页。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        fakeid: { type: 'string', description: '公众号内部 ID（从 get_account_by_url 或 search_accounts 获取）' },
+        album_id: { type: 'string', description: '合集 ID' },
+        count: { type: 'integer', minimum: 1, maximum: 20, default: 10, description: '返回数量' },
+        begin_msgid: { type: 'string', description: '分页起始消息 ID（可选）' },
+        begin_itemidx: { type: 'string', description: '分页起始索引（可选）' },
+      },
+      required: ['fakeid', 'album_id'],
+    },
+  },
+  {
+    name: 'get_account_name',
+    description: '从微信文章链接快速获取公众号名称，无需 fakeid。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: '该公众号发布的任意文章链接' },
+      },
+      required: ['url'],
+    },
+  },
 ] as const;
 
 // ── Tool execution ────────────────────────────────────────────────────────────
@@ -117,7 +158,7 @@ async function executeTool(name: string, args: Record<string, unknown>, base: st
       return get(
         '/api/public/v1/account',
         { keyword: args.keyword, begin: args.begin ?? 0, size: args.size ?? 5 },
-        { 'X-Auth-Key': String(args.auth_key) },
+        { 'X-Auth-Key': String(args.auth_key) }
       );
 
     case 'list_articles': {
@@ -129,6 +170,21 @@ async function executeTool(name: string, args: Record<string, unknown>, base: st
       if (args.keyword) params.keyword = args.keyword;
       return get('/api/public/v1/article', params, { 'X-Auth-Key': String(args.auth_key) });
     }
+
+    case 'get_auth_key':
+      return get('/api/public/v1/authkey', {});
+
+    case 'list_album':
+      return get('/api/web/misc/appmsgalbum', {
+        fakeid: args.fakeid,
+        album_id: args.album_id,
+        count: args.count ?? 10,
+        begin_msgid: args.begin_msgid,
+        begin_itemidx: args.begin_itemidx,
+      });
+
+    case 'get_account_name':
+      return get('/api/web/misc/accountname', { url: args.url });
 
     default:
       throw new Error(`未知工具: ${name}`);

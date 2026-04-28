@@ -2,6 +2,7 @@ import TurndownService from 'turndown';
 import { urlIsValidMpArticle } from '#shared/utils';
 import { normalizeHtml, parseCgiDataNew } from '#shared/utils/html';
 import { USER_AGENT } from '~/config';
+import { getTokenFromEvent } from '~/server/services/api/auth-session';
 
 interface SearchBizQuery {
   url: string;
@@ -9,6 +10,11 @@ interface SearchBizQuery {
 }
 
 export default defineEventHandler(async event => {
+  const token = await getTokenFromEvent(event);
+  if (!token) {
+    return { base_resp: { ret: -1, err_msg: '认证信息无效' } };
+  }
+
   const query = getQuery<SearchBizQuery>(event);
   if (!query.url) {
     return {

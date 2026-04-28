@@ -1,4 +1,3 @@
-import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { formatItemShowType, formatTimeStamp } from '#shared/utils/helpers';
 import type { AccountManifest } from '~/types/account';
@@ -15,6 +14,7 @@ export type ExcelExportEntity = AppMsgEx &
 // 导出为 excel 文件
 export async function export2ExcelFile(data: ExcelExportEntity[], filename: string) {
   // 创建工作簿和工作表
+  const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Sheet1');
 

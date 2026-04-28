@@ -141,4 +141,18 @@ const DURATION_OPTIONS = getSelectOptions();
 function formatDate() {
   return dayjs.unix(preferences.value.syncDatePoint).format('YYYY-MM-DD');
 }
+
+const toast = useToast();
+
+function onD1AuthError() {
+  toast.add({
+    title: 'D1 镜像需要登录',
+    description: '未检测到有效登录状态，云端镜像已自动关闭',
+    color: 'red',
+    timeout: 6000,
+  });
+}
+
+onMounted(() => window.addEventListener('d1-auth-error', onD1AuthError));
+onUnmounted(() => window.removeEventListener('d1-auth-error', onD1AuthError));
 </script>

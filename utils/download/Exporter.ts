@@ -1,6 +1,5 @@
 import dayjs from 'dayjs';
 import mime from 'mime';
-import TurndownService from 'turndown';
 import { filterInvalidFilenameChars, sleep } from '#shared/utils/helpers';
 import { parseCgiDataNew } from '#shared/utils/html';
 import { renderHTMLFromCgiDataNew, renderTextFromCgiDataNew } from '#shared/utils/renderer';
@@ -408,6 +407,7 @@ export class Exporter extends BaseDownloader {
     const total = this.urls.length;
     this.emit('export:total', total);
 
+    const { default: TurndownService } = await import('turndown');
     const turndownService = new TurndownService();
 
     await this.processFileExportQueue(this.urls, async url => {
