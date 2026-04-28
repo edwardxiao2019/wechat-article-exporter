@@ -10,6 +10,7 @@ export default defineEventHandler(async event => {
   return fetchAuthorInfoResponse(event, {
     fakeid,
   }).catch(e => {
+    console.error('[authorinfo] upstream error:', e);
     return {
       base_resp: {
         ret: -1,

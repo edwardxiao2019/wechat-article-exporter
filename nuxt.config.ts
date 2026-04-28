@@ -18,7 +18,6 @@ export default defineNuxtConfig({
         dsn: process.env.NUXT_SENTRY_DSN,
       },
     },
-    debugMpRequest: false,
   },
   app: {
     head: {

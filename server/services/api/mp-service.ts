@@ -236,7 +236,8 @@ export async function searchAccountByArticleUrl(event: H3Event, input: SearchAcc
     token,
     keyword: name,
     size: 20,
-  }).catch(() => {
+  }).catch(e => {
+    console.error('[mp-service] upstream error:', e);
     return {
       base_resp: {
         ret: -1,

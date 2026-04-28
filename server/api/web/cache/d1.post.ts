@@ -4,6 +4,7 @@ import {
   type D1CacheDeleteRequestEntry,
   type D1CacheWriteRequestEntry,
 } from '~/shared/utils/d1-cache';
+import { getTokenFromEvent } from '~/server/services/api/auth-session';
 
 interface D1StatementLike {
   bind(...values: unknown[]): {
@@ -129,6 +130,11 @@ export default defineEventHandler(async event => {
       statusCode: 503,
       statusMessage: 'D1 cache mirror is disabled',
     });
+  }
+
+  const token = await getTokenFromEvent(event);
+  if (!token) {
+    throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
   }
 
   const body = await readBody<{

@@ -33,7 +33,7 @@ export default defineEventHandler(async event => {
     begin,
     size,
   }).catch(e => {
-    console.error(e);
+    console.error('[appmsgpublish] upstream error:', e);
     return {
       base_resp: {
         ret: -1,

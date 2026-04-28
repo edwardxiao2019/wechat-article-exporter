@@ -453,7 +453,7 @@ export class Exporter extends BaseDownloader {
 
     await this.processFileExportQueue(
       this.urls,
-      async (url) => {
+      async url => {
         const cached = await getHtmlCache(url);
         if (!cached) {
           console.warn(`文章(url: ${url} )的 html 还未下载，不能导出`);
@@ -505,7 +505,7 @@ export class Exporter extends BaseDownloader {
         const pdfBlob = await response.blob();
         await this.writeFile(filename + '.pdf', pdfBlob);
       },
-      { concurrency: 2, progressEvent: 'export:write:progress' },
+      { concurrency: 2, progressEvent: 'export:write:progress' }
     );
     await sleep(100);
   }

@@ -42,6 +42,7 @@ export default defineEventHandler(async event => {
     begin,
     size,
   }).catch(e => {
+    console.error('[article] upstream error:', e);
     return {
       base_resp: {
         ret: -1,

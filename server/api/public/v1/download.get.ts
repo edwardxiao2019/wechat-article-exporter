@@ -19,7 +19,12 @@ export default defineEventHandler(async event => {
     };
   }
 
-  const url = decodeURIComponent(query.url.trim());
+  let url: string;
+  try {
+    url = decodeURIComponent(query.url.trim());
+  } catch {
+    return { base_resp: { ret: -1, err_msg: 'url编码格式无效' } };
+  }
   if (!urlIsValidMpArticle(url)) {
     return {
       base_resp: {
@@ -39,13 +44,24 @@ export default defineEventHandler(async event => {
     };
   }
 
-  const rawHtml = await fetch(url, {
-    headers: {
-      Referer: 'https://mp.weixin.qq.com/',
-      Origin: 'https://mp.weixin.qq.com',
-      'User-Agent': USER_AGENT,
-    },
-  }).then(res => res.text());
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 30_000);
+  let rawHtml: string;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Referer: 'https://mp.weixin.qq.com/',
+        Origin: 'https://mp.weixin.qq.com',
+        'User-Agent': USER_AGENT,
+      },
+      signal: ac.signal,
+    });
+    rawHtml = await res.text();
+  } catch (err: any) {
+    return { base_resp: { ret: -1, err_msg: `抓取文章失败: ${err?.message ?? String(err)}` } };
+  } finally {
+    clearTimeout(timer);
+  }
 
   switch (format) {
     case 'html':

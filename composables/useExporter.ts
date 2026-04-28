@@ -287,7 +287,7 @@ export default () => {
   function exportFile(
     type: 'excel' | 'json' | 'html' | 'text' | 'markdown' | 'word' | 'pdf',
     urls: string[],
-    contentNotDownloadedCount?: number,
+    contentNotDownloadedCount?: number
   ) {
     if (needsContentFormats.has(type) && contentNotDownloadedCount) {
       toast.warning('提示', `有 ${contentNotDownloadedCount} 篇文章尚未抓取内容，请先抓取内容后再导出`);

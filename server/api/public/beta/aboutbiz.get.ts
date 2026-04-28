@@ -18,7 +18,6 @@ export default defineEventHandler(async event => {
     wx_header: process.env.NUXT_WECHAT_ABOUT_BIZ_WX_HEADER || '',
   };
 
-  // const rawHtml = fs.readFileSync('samples/aboutbiz/biz-Mzg3OTYzMDkzMg==.html', 'utf8');
   const rawHtml = await fetch(`https://mp.weixin.qq.com/mp/aboutbiz?${new URLSearchParams(query).toString()}`, {
     method: 'GET',
     headers: {
@@ -30,7 +29,8 @@ export default defineEventHandler(async event => {
 
   // 写入文件方便调试
   if (isDev) {
-    fs.writeFileSync(`samples/aboutbiz/biz-${fakeid}.html`, rawHtml);
+    const safeFakeid = fakeid.replace(/[^A-Za-z0-9=+]/g, '_');
+    fs.writeFileSync(`samples/aboutbiz/biz-${safeFakeid}.html`, rawHtml);
   }
 
   const result = extractInfo(rawHtml);
@@ -94,26 +94,34 @@ function extractInfo(rawHTML: string) {
     $itemInfo = $itemInfo.next('.item-info');
   }
 
-  const scriptCodeMatchResult = rawHTML.match(/(?<code>var cgiData = .+)seajs\.use/s);
-  if (scriptCodeMatchResult && scriptCodeMatchResult.groups && scriptCodeMatchResult.groups.code) {
-    const scriptCode = scriptCodeMatchResult.groups.code;
-    const window: Record<string, any> = {
-      cgiData: {
-        auth_3rd_list: [],
-      },
-    };
-    try {
-      eval(scriptCode);
-    } catch (e) {
-      console.error('eval execute js code fatal:', e);
+  // ip_wording is a JS object literal, not a string: window.ip_wording = { countryName: '...', ... };
+  const ipBlockMatch = rawHTML.match(/window\.ip_wording\s*=\s*\{([\s\S]*?)\};/);
+  if (ipBlockMatch) {
+    const ipObj: Record<string, string> = {};
+    const kvRe = /(\w+):\s*'([^']*)'/g;
+    let m: RegExpExecArray | null;
+    while ((m = kvRe.exec(ipBlockMatch[1])) !== null) {
+      ipObj[m[1]] = m[2];
     }
-    if (window.ip_wording) {
-      result.ip_wording = window.ip_wording;
-    }
-    if (window.cgiData.auth_3rd_list) {
-      result.auth_3rd_list = window.cgiData.auth_3rd_list;
-    }
+    if (Object.keys(ipObj).length > 0) result.ip_wording = ipObj;
   }
+
+  // auth_3rd_list items are added via window.cgiData.auth_3rd_list.push({...}), not the initial declaration.
+  // category items contain JS expressions ('4'*1) so we only extract string fields before category:.
+  const pushRe = /window\.cgiData\.auth_3rd_list\.push\(\{([\s\S]*?)\}\s*\)\s*;/g;
+  const auth3rdList: Array<Record<string, string>> = [];
+  let pm: RegExpExecArray | null;
+  while ((pm = pushRe.exec(rawHTML)) !== null) {
+    const topBlock = pm[1].split(/\s+category\s*:/)[0];
+    const item: Record<string, string> = {};
+    const kvRe2 = /(\w+):\s*'([^']*)'/g;
+    let km: RegExpExecArray | null;
+    while ((km = kvRe2.exec(topBlock)) !== null) {
+      item[km[1]] = km[2];
+    }
+    if (Object.keys(item).length > 0) auth3rdList.push(item);
+  }
+  if (auth3rdList.length > 0) result.auth_3rd_list = auth3rdList;
 
   return result;
 }

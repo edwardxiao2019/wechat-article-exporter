@@ -36,7 +36,7 @@ const TOOLS = [
   },
   {
     name: 'get_account_details',
-    description: '获取公众号详细资料：简介、微信号、认证信息、历史名称、IP 归属地等',
+    description: '获取公众号详细资料：简介、微信号、认证信息、历史名称、IP 归属地等。注意：需要服务端配置 NUXT_WECHAT_ABOUT_BIZ_WX_HEADER / NUXT_WECHAT_ABOUT_BIZ_UIN / NUXT_WECHAT_ABOUT_BIZ_KEY 等环境变量，否则返回"密钥已过期"。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -192,8 +192,11 @@ export default {
     }
 
     const { method, params, id } = body;
+    const base = env.EXPORTER_BASE_URL;
+    if (!base) {
+      return rpcErr(id ?? null, -32603, 'EXPORTER_BASE_URL 未配置');
+    }
     const p = (params ?? {}) as Record<string, unknown>;
-    const base = env.EXPORTER_BASE_URL ?? 'https://master.wechat-article-exporter-amq.pages.dev';
 
     if (method === 'initialize') {
       return rpcOk(id, {
@@ -215,6 +218,12 @@ export default {
       const { name, arguments: args = {} } = p as { name: string; arguments?: Record<string, unknown> };
       try {
         const text = await executeTool(name, args, base);
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed?.base_resp?.ret !== undefined && parsed.base_resp.ret !== 0) {
+            return rpcOk(id, { content: [{ type: 'text', text }], isError: true });
+          }
+        } catch {}
         return rpcOk(id, { content: [{ type: 'text', text }] });
       } catch (err) {
         return rpcErr(id, -32603, String(err));
