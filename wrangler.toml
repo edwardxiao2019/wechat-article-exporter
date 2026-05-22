@@ -4,9 +4,9 @@ pages_build_output_dir = "dist"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "22d46ff673c946f1a5f3b790818b5618"
+id = "80b881633c3443a0baee86d78c1a79ac"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "wechat-article-cache"
-database_id = "361958fa-c8df-4828-ac1c-ad77f23f2924"
+database_id = "594dd9d5-92c9-4fea-8bcd-76f866a31248"
